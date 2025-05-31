@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payload-analyzer
+  labels:
+    app: payload-analyzer
+spec:
+  replicas: 3  # Three replicas for high availability and load balancing
+  selector:
+    matchLabels:
+      app: payload-analyzer
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0   # Zero-downtime: always keep all pods available during update
+      maxSurge: 1        # Allow one extra pod above desired count during update
+  template:
+    metadata:
+      labels:
+        app: payload-analyzer
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8081"
+        prometheus.io/path: "/metrics"
+    spec:
+      terminationGracePeriodSeconds: 60 # Graceful shutdown period
+      containers:
+        - name: payload-analyzer
+          image: localhost:5000/payload-analyzer:latest  # Use Minikube registry
+          imagePullPolicy: Always # For development, always pull the latest image
+          ports:
+            - containerPort: 8081
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8081
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          lifecycle:
+            preStop:
+              exec:
+                # ---
+                # Kubelet sets pod Ready=False and phase=Terminating before running preStop.
+                # At this point, Endpoint/EndpointSlice controllers remove the pod IP from services,
+                # so new requests stop being routed to this pod.
+                #
+                # Only after preStop completes does kubelet send SIGTERM to the container (per spec).
+                # This sleep ensures:
+                #   - Endpoint changes (Ready=False) have time to propagate to iptables/ipvs and external balancers.
+                #   - No new clients are routed, but the app is not yet shutting down.
+                # After sleep, kubelet sends SIGTERM and Gunicorn/uvicorn graceful shutdown begins.
+                command: ["/bin/sh","-c","sleep 5"]

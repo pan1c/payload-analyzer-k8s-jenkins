@@ -1,0 +1,30 @@
+# ── Python artefacts ───────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# ── Virtual-env / local config ────────────────
+venv/
+.venv/
+.env
+*.env
+
+# ── VCS & docs ────────────────────────────────
+.git/
+.gitignore
+README.md
+*.md
+
+# ── IDE settings ──────────────────────────────
+.vscode/
+.idea/
+
+# ── Temporary DB files ────────────────────────
+*.db
+*.sqlite3
+
+# Development files
+dev/
+# Distribution files
+payload-analyzer-submission*
