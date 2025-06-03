@@ -14,6 +14,6 @@ find app/ tests/ -type f -name '*.pyc' -delete
 cd "$(dirname "$0")/.."
 
 # Use zip instead of tar, exclude macOS resource fork files (._*)
-git ls-files -z | grep -zv '^\._' | xargs -0 zip -q "$ARCHIVE_NAME.zip"
+git ls-files -z | xargs -0 zip -q "$ARCHIVE_NAME.zip"
 
 echo "Created archive: $ARCHIVE_NAME.zip"
